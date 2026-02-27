@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API 配置 - 完整演示</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f7;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+            gap: 30px;
+        }
+        
+        .phone {
+            width: 375px;
+            min-height: 812px;
+            background: #FFFFFF;
+            border-radius: 40px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* 导航 */
+        .nav {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+            padding: 50px 20px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .nav-back { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .arrow { font-size: 20px; color: #0F2943; }
+        .nav-brand { font-size: 18px; font-weight: 700; color: #0F2943; }
+        
+        .nav-lang {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: #F2F2F7;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .nav-lang:hover { background: #E5E5EA; }
+        
+        /* 内容 */
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 20px 20px;
+        }
+        
+        .content::-webkit-scrollbar { width: 0; }
+        
+        /* Hero */
+        .hero {
+            padding: 32px 0 24px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+        }
+        
+        .hero-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #6B7280;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+        
+        .hero-title {
+            display: block;
+            font-size: 36px;
+            font-weight: 700;
+            color: #0F2943;
+            line-height: 1.2;
+            margin-bottom: 8px;
+        }
+        
+        .hero-subtitle {
+            display: block;
+            font-size: 15px;
+            color: #6B7280;
+        }
+        
+        /* Section */
+        .section-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: #6B7280;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin: 28px 0 12px;
+        }
+        
+        /* Status */
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+        
+        .status-card {
+            background: #F9FAFB;
+            border: 1px solid transparent;
+            border-radius: 12px;
+            padding: 16px 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .status-card:hover { background: #F3F4F6; }
+        .status-card.active { background: #fff; border-color: #0F2943; }
+        .status-card.online { background: #F0FDF4; border-color: #10B981; }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #D1D5DB;
+            margin: 0 auto 8px;
+        }
+        
+        .status-card.active .status-dot { background: #0F2943; }
+        .status-card.online .status-dot { background: #10B981; box-shadow: 0 0 8px #10B981; }
+        
+        .status-name { font-size: 13px; font-weight: 600; color: #111; }
+        .status-text { font-size: 10px; color: #6B7280; margin-top: 4px; }
+        .status-card.online .status-text { color: #10B981; font-weight: 500; }
+        
+        /* Provider Block */
+        .provider-block {
+            background: #fff;
+            border: 1px solid #E5E7EB;
+            border-radius: 16px;
+            margin-bottom: 12px;
+            overflow: hidden;
+        }
+        
+        .provider-block.expanded { border-color: #0F2943; }
+        
+        .block-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+            cursor: pointer;
+        }
+        
+        .block-meta { display: flex; align-items: flex-start; gap: 12px; }
+        .block-number { font-size: 12px; font-weight: 600; color: #9CA3AF; font-family: monospace; }
+        .block-title { font-size: 16px; font-weight: 600; color: #111; display: block; }
+        .block-desc { font-size: 12px; color: #6B7280; margin-top: 2px; display: block; }
+        
+        .toggle-switch {
+            width: 48px;
+            height: 28px;
+            background: #E5E7EB;
+            border-radius: 14px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .toggle-switch.on { background: #0F2943; }
+        .toggle-knob {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            background: #fff;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        .toggle-switch.on .toggle-knob { transform: translateX(20px); }
+        
+        .block-content { padding: 0 16px 16px; border-top: 1px solid #F3F4F6; }
+        .form-group { margin-top: 16px; }
+        .field-label { font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px; display: block; }
+        .field-label .required { color: #EF4444; }
+        
+        .field-input {
+            width: 100%;
+            height: 44px;
+            background: #F9FAFB;
+            border: 1px solid #E5E7EB;
+            border-radius: 10px;
+            padding: 0 14px;
+            font-size: 14px;
+            color: #111;
+            outline: none;
+        }
+        
+        .field-input:focus { background: #fff; border-color: #0F2943; }
+        
+        .chip-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+        .chip {
+            padding: 8px 14px;
+            background: #F9FAFB;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #6B7280;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .chip:hover { background: #F3F4F6; }
+        .chip.active { background: #0F2943; color: #fff; }
+        
+        .action-btn {
+            width: 100%;
+            height: 44px;
+            background: #0F2943;
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 600;
+            margin-top: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .action-btn:hover { background: #1a3d5c; }
+        .action-btn.success { background: #10B981; }
+        .action-btn.error { background: #EF4444; }
+        
+        /* Settings */
+        .settings-list { background: #fff; border: 1px solid #E5E7EB; border-radius: 16px; overflow: hidden; }
+        .setting-item { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; }
+        .setting-item:not(:last-child) { border-bottom: 1px solid #F3F4F6; }
+        .setting-label { font-size: 15px; color: #111; }
+        .setting-hint { font-size: 12px; color: #6B7280; margin-top: 2px; }
+        .setting-value { display: flex; align-items: center; gap: 6px; color: #0F2943; font-weight: 500; }
+        
+        /* Footer */
+        .footer { margin-top: 32px; }
+        .save-btn {
+            width: 100%;
+            height: 50px;
+            background: #0F2943;
+            border: none;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .save-btn:hover { background: #1a3d5c; }
+        .reset-btn {
+            width: 100%;
+            height: 44px;
+            background: transparent;
+            border: none;
+            color: #6B7280;
+            font-size: 15px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+        
+        .brand-footer { text-align: center; padding: 30px 0; }
+        .brand-footer .brand { font-size: 14px; font-weight: 600; color: #0F2943; }
+        .brand-footer .copy { font-size: 12px; color: #9CA3AF; margin-top: 4px; display: block; }
+        
+        /* ===== 右侧 API 日志面板 ===== */
+        .api-panel {
+            width: 400px;
+            background: #fff;
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            max-height: 812px;
+        }
+        
+        .panel-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #E5E7EB;
+        }
+        
+        .panel-icon { font-size: 24px; }
+        .panel-title { font-size: 18px; font-weight: 700; color: #111; }
+        .panel-subtitle { font-size: 13px; color: #6B7280; margin-left: auto; }
+        
+        .api-log {
+            flex: 1;
+            overflow-y: auto;
+            font-family: 'SF Mono', 'Consolas', monospace;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+        
+        .api-log::-webkit-scrollbar { width: 6px; }
+        .api-log::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 3px; }
+        
+        .log-entry {
+            margin-bottom: 16px;
+            padding: 12px;
+            background: #F9FAFB;
+            border-radius: 10px;
+            border-left: 3px solid #0F2943;
+        }
+        
+        .log-entry.success { border-left-color: #10B981; background: #F0FDF4; }
+        .log-entry.error { border-left-color: #EF4444; background: #FEF2F2; }
+        .log-entry.warning { border-left-color: #F59E0B; background: #FFFBEB; }
+        
+        .log-time { font-size: 10px; color: #9CA3AF; margin-bottom: 4px; }
+        .log-method {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+            margin-right: 6px;
+        }
+        
+        .log-method.get { background: #DBEAFE; color: #1D4ED8; }
+        .log-method.post { background: #D1FAE5; color: #059669; }
+        .log-path { color: #0F2943; font-weight: 600; }
+        .log-status { float: right; font-weight: 600; }
+        .log-status.success { color: #10B981; }
+        .log-status.error { color: #EF4444; }
+        .log-body { margin-top: 8px; padding-top: 8px; border-top: 1px solid #E5E7EB; color: #4B5563; }
+        .log-response { margin-top: 8px; color: #6B7280; font-style: italic; }
+        
+        .clear-btn {
+            margin-top: 16px;
+            padding: 10px;
+            background: #F3F4F6;
+            border: none;
+            border-radius: 8px;
+            color: #6B7280;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        
+        .clear-btn:hover { background: #E5E7EB; }
+        
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #0F2943;
+            padding: 12px 24px;
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+        
+        @media (max-width: 900px) {
+            body { flex-direction: column; align-items: center; }
+            .api-panel { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <!-- 手机界面 -->
+    <div class="phone">
+        <div class="nav">
+            <div class="nav-back"><span class="arrow">←</span></div>
+            <span class="nav-brand" data-i18n="nav.title">API 配置</span>
+            <div class="nav-lang" onclick="toggleLanguage()">
+                <span id="langFlag">🇨🇳</span>
+                <span id="langCode">中文</span>
+            </div>
+        </div>
+        
+        <div class="content">
+            <div class="hero">
+                <span class="hero-label" data-i18n="hero.label">API CONFIGURATION</span>
+                <span class="hero-title" data-i18n="hero.title">Better AI</span>
+                <span class="hero-subtitle" data-i18n="hero.subtitle">配置您的 AI 服务提供商</span>
+            </div>
+            
+            <div class="section-title" data-i18n="status.title">系统状态</div>
+            <div class="status-grid">
+                <div class="status-card online" onclick="testConnection('opencode')">
+                    <div class="status-dot"></div>
+                    <div class="status-name">OpenCode</div>
+                    <div class="status-text" data-i18n="status.online">在线</div>
+                </div>
+                <div class="status-card" onclick="testConnection('openclaw')">
+                    <div class="status-dot"></div>
+                    <div class="status-name">OpenClaw</div>
+                    <div class="status-text" data-i18n="status.offline">离线</div>
+                </div>
+                <div class="status-card" onclick="testConnection('openai')">
+                    <div class="status-dot"></div>
+                    <div class="status-name">OpenAI</div>
+                    <div class="status-text" data-i18n="status.offline">离线</div>
+                </div>
+            </div>
+            
+            <div class="section-title" data-i18n="config.title">服务配置</div>
+            
+            <div class="provider-block expanded" id="opencode">
+                <div class="block-header" onclick="toggleBlock('opencode')">
+                    <div class="block-meta">
+                        <span class="block-number">01</span>
+                        <div>
+                            <span class="block-title">OpenCode</span>
+                            <span class="block-desc" data-i18n="providers.opencode.desc">本地 AI 编程助手</span>
+                        </div>
+                    </div>
+                    <div class="toggle-switch on" onclick="event.stopPropagation(); toggleSwitch('opencode')">
+                        <div class="toggle-knob"></div>
+                    </div>
+                </div>
+                <div class="block-content">
+                    <div class="form-group">
+                        <label class="field-label" data-i18n="config.apiEndpoint">API 地址</label>
+                        <input class="field-input" value="http://localhost:12345" id="opencode-url">
+                    </div>
+                    <div class="form-group">
+                        <label class="field-label">
+                            <span data-i18n="config.apiKey">API 密钥</span>
+                            <span style="color: #9CA3AF; font-weight: 400;">(</span><span data-i18n="config.optional" style="color: #9CA3AF; font-weight: 400;">可选</span><span style="color: #9CA3AF; font-weight: 400;">)</span>
+                        </label>
+                        <input class="field-input" type="password" placeholder="••••••••" id="opencode-key">
+                    </div>
+                    <div class="form-group">
+                        <label class="field-label" data-i18n="config.model">模型</label>
+                        <div class="chip-group">
+                            <span class="chip active" onclick="selectChip(this)">claude-3-opus</span>
+                            <span class="chip" onclick="selectChip(this)">gpt-4</span>
+                            <span class="chip" onclick="selectChip(this)">gpt-3.5</span>
+                        </div>
+                    </div>
+                    <button class="action-btn" onclick="testConnection('opencode')" id="btn-opencode">
+                        <span data-i18n="actions.testConnection">测试连接</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="provider-block" id="openclaw">
+                <div class="block-header" onclick="toggleBlock('openclaw')">
+                    <div class="block-meta">
+                        <span class="block-number">02</span>
+                        <div>
+                            <span class="block-title">OpenClaw</span>
+                            <span class="block-desc" data-i18n="providers.openclaw.desc">个人 AI 助手</span>
+                        </div>
+                    </div>
+                    <div class="toggle-switch" onclick="event.stopPropagation(); toggleSwitch('openclaw')">
+                        <div class="toggle-knob"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="provider-block" id="openai">
+                <div class="block-header" onclick="toggleBlock('openai')">
+                    <div class="block-meta">
+                        <span class="block-number">03</span>
+                        <div>
+                            <span class="block-title">OpenAI</span>
+                            <span class="block-desc" data-i18n="providers.openai.desc">GPT-4 / GPT-3.5</span>
+                        </div>
+                    </div>
+                    <div class="toggle-switch" onclick="event.stopPropagation(); toggleSwitch('openai')">
+                        <div class="toggle-knob"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section-title" data-i18n="global.title">全局设置</div>
+            <div class="settings-list">
+                <div class="setting-item">
+                    <span class="setting-label" data-i18n="global.defaultProvider">默认服务</span>
+                    <div class="setting-value">Auto <span>›</span></div>
+                </div>
+                <div class="setting-item">
+                    <div>
+                        <div class="setting-label" data-i18n="global.timeout">请求超时</div>
+                        <div class="setting-hint">60 <span data-i18n="units.seconds">秒</span></div>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <div>
+                        <div class="setting-label" data-i18n="global.streamMode">流式响应</div>
+                        <div class="setting-hint" data-i18n="global.streamModeDesc">实时显示 AI 回复</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer">
+                <button class="save-btn" onclick="saveConfigs()" data-i18n="actions.save">保存配置</button>
+                <button class="reset-btn" onclick="resetConfigs()" data-i18n="actions.reset">重置</button>
+            </div>
+            
+            <div class="brand-footer">
+                <span class="brand">Manifold AI</span>
+                <span class="copy">© 2025 All rights reserved</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- API 日志面板 -->
+    <div class="api-panel">
+        <div class="panel-header">
+            <span class="panel-icon">📡</span>
+            <span class="panel-title">API 调用日志</span>
+            <span class="panel-subtitle">实时显示</span>
+        </div>
+        <div class="api-log" id="apiLog">
+            <div class="log-entry">
+                <div class="log-time">系统启动</div>
+                <div>
+                    <span class="log-method get">GET</span>
+                    <span class="log-path">/api/config</span>
+                    <span class="log-status success">✓</span>
+                </div>
+                <div class="log-body">获取配置成功</div>
+            </div>
+        </div>
+        <button class="clear-btn" onclick="clearLog()">清空日志</button>
+    </div>
+
+    <script>
+        // 多语言数据
+        const i18nData = {
+            'zh-CN': {
+                'nav.title': 'API 配置',
+                'nav.back': '返回',
+                'hero.label': 'API CONFIGURATION',
+                'hero.title': 'Better AI',
+                'hero.subtitle': '配置您的 AI 服务提供商',
+                'status.title': '系统状态',
+                'status.online': '在线',
+                'status.offline': '离线',
+                'status.error': '错误',
+                'status.testing': '测试中',
+                'status.connected': '已连接',
+                'config.title': '服务配置',
+                'config.apiEndpoint': 'API 地址',
+                'config.apiKey': 'API 密钥',
+                'config.optional': '可选',
+                'config.model': '模型',
+                'providers.opencode.desc': '本地 AI 编程助手',
+                'providers.openclaw.desc': '个人 AI 助手',
+                'providers.openai.desc': 'GPT-4 / GPT-3.5',
+                'global.title': '全局设置',
+                'global.defaultProvider': '默认服务',
+                'global.timeout': '请求超时',
+                'global.streamMode': '流式响应',
+                'global.streamModeDesc': '实时显示 AI 回复',
+                'actions.testConnection': '测试连接',
+                'actions.save': '保存配置',
+                'actions.reset': '重置',
+                'actions.confirm': '确定',
+                'actions.cancel': '取消',
+                'units.seconds': '秒',
+                'messages.saveSuccess': '配置已保存',
+                'messages.testSuccess': '连接成功',
+                'messages.testFailed': '连接失败'
+            },
+            'en-US': {
+                'nav.title': 'API Config',
+                'nav.back': 'Back',
+                'hero.label': 'API CONFIGURATION',
+                'hero.title': 'Better AI',
+                'hero.subtitle': 'Configure your AI providers',
+                'status.title': 'System Status',
+                'status.online': 'Online',
+                'status.offline': 'Offline',
+                'status.error': 'Error',
+                'status.testing': 'Testing',
+                'status.connected': 'Connected',
+                'config.title': 'Provider Config',
+                'config.apiEndpoint': 'API Endpoint',
+                'config.apiKey': 'API Key',
+                'config.optional': 'Optional',
+                'config.model': 'Model',
+                'providers.opencode.desc': 'Local AI Coding Assistant',
+                'providers.openclaw.desc': 'Personal AI Agent',
+                'providers.openai.desc': 'GPT-4 / GPT-3.5',
+                'global.title': 'Global Settings',
+                'global.defaultProvider': 'Default Provider',
+                'global.timeout': 'Timeout',
+                'global.streamMode': 'Stream Mode',
+                'global.streamModeDesc': 'Show AI responses in real-time',
+                'actions.testConnection': 'Test Connection',
+                'actions.save': 'Save Configs',
+                'actions.reset': 'Reset',
+                'actions.confirm': 'Confirm',
+                'actions.cancel': 'Cancel',
+                'units.seconds': 's',
+                'messages.saveSuccess': 'Configs saved',
+                'messages.testSuccess': 'Connection successful',
+                'messages.testFailed': 'Connection failed'
+            }
+        };
+        
+        let currentLang = 'zh-CN';
+        
+        // 切换语言
+        function toggleLanguage() {
+            currentLang = currentLang === 'zh-CN' ? 'en-US' : 'zh-CN';
+            
+            // 更新语言标识
+            document.getElementById('langFlag').textContent = currentLang === 'zh-CN' ? '🇨🇳' : '🇺🇸';
+            document.getElementById('langCode').textContent = currentLang === 'zh-CN' ? '中文' : 'EN';
+            
+            // 更新所有带 data-i18n 属性的元素
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                const text = i18nData[currentLang][key];
+                if (text) el.textContent = text;
+            });
+            
+            showToast(currentLang === 'zh-CN' ? '已切换为中文' : 'Switched to English');
+            
+            addLog('INFO', '切换语言', `切换为 ${currentLang === 'zh-CN' ? '中文' : 'English'}`);
+        }
+        
+        // 切换开关
+        function toggleSwitch(id) {
+            const block = document.getElementById(id);
+            const toggle = block.querySelector('.toggle-switch');
+            toggle.classList.toggle('on');
+            
+            const isOn = toggle.classList.contains('on');
+            if (isOn) {
+                block.classList.add('expanded');
+            }
+            
+            addLog('POST', `/api/config/update`, `启用 ${id}: ${isOn}`);
+        }
+        
+        // 展开/收起区块
+        function toggleBlock(id) {
+            const block = document.getElementById(id);
+            block.classList.toggle('expanded');
+        }
+        
+        // 选择芯片
+        function selectChip(chip) {
+            chip.parentElement.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+        }
+        
+        // 测试连接
+        function testConnection(provider) {
+            const btn = document.getElementById(`btn-${provider}`);
+            const originalText = btn.innerHTML;
+            
+            // 显示加载
+            btn.innerHTML = '<span class="loading">⏳</span> Testing...';
+            btn.disabled = true;
+            
+            addLog('POST', '/api/config/test', `{ provider: "${provider}" }`);
+            
+            setTimeout(() => {
+                const isSuccess = Math.random() > 0.3; // 70% 成功率
+                
+                if (isSuccess) {
+                    btn.innerHTML = '✓ ' + (currentLang === 'zh-CN' ? '已连接' : 'Connected');
+                    btn.classList.add('success');
+                    
+                    // 更新状态卡片
+                    const card = document.querySelectorAll('.status-card')[provider === 'opencode' ? 0 : provider === 'openclaw' ? 1 : 2];
+                    card.classList.add('online');
+                    card.querySelector('.status-text').textContent = currentLang === 'zh-CN' ? '在线' : 'Online';
+                    
+                    addLog('POST', '/api/config/test', `{ provider: "${provider}" }`, 200, `{ success: true, message: "${currentLang === 'zh-CN' ? '连接成功' : 'Connected'}" }`);
+                    showToast(currentLang === 'zh-CN' ? '连接成功！' : 'Connected!');
+                } else {
+                    btn.innerHTML = '✕ ' + (currentLang === 'zh-CN' ? '重试' : 'Retry');
+                    btn.classList.add('error');
+                    addLog('POST', '/api/config/test', `{ provider: "${provider}" }`, 500, `{ success: false, error: "${currentLang === 'zh-CN' ? '连接失败' : 'Connection failed'}" }`, true);
+                    showToast(currentLang === 'zh-CN' ? '连接失败' : 'Connection failed');
+                }
+                
+                btn.disabled = false;
+                
+                // 3秒后恢复
+                setTimeout(() => {
+                    btn.classList.remove('success', 'error');
+                    btn.innerHTML = '<span data-i18n="actions.testConnection">' + (currentLang === 'zh-CN' ? '测试连接' : 'Test Connection') + '</span>';
+                }, 3000);
+            }, 1500);
+        }
+        
+        // 保存配置
+        function saveConfigs() {
+            const config = {
+                opencode: {
+                    enabled: document.getElementById('opencode').querySelector('.toggle-switch').classList.contains('on'),
+                    url: document.getElementById('opencode-url').value
+                }
+            };
+            
+            addLog('POST', '/api/config/update', JSON.stringify(config, null, 2), 200, '{ success: true, message: "Configs saved" }');
+            showToast(currentLang === 'zh-CN' ? '配置已保存' : 'Configs saved');
+        }
+        
+        // 重置配置
+        function resetConfigs() {
+            if (confirm(currentLang === 'zh-CN' ? '确定要重置所有配置吗？' : 'Reset all configurations?')) {
+                addLog('POST', '/api/config/reset', '{}', 200, '{ success: true }');
+                showToast(currentLang === 'zh-CN' ? '已重置' : 'Reset complete');
+                location.reload();
+            }
+        }
+        
+        // 添加日志
+        function addLog(method, path, body, status, response, isError) {
+            const log = document.getElementById('apiLog');
+            const time = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+            
+            const entry = document.createElement('div');
+            entry.className = 'log-entry' + (isError ? ' error' : status === 200 ? ' success' : '');
+            
+            entry.innerHTML = `
+                <div class="log-time">${time}</div>
+                <div>
+                    <span class="log-method ${method.toLowerCase()}">${method}</span>
+                    <span class="log-path">${path}</span>
+                    ${status ? `<span class="log-status ${status === 200 ? 'success' : 'error'}">${status}</span>` : ''}
+                </div>
+                ${body ? `<div class="log-body">${body}</div>` : ''}
+                ${response ? `<div class="log-response">← ${response}</div>` : ''}
+            `;
+            
+            log.insertBefore(entry, log.firstChild);
+        }
+        
+        // 清空日志
+        function clearLog() {
+            document.getElementById('apiLog').innerHTML = '';
+        }
+        
+        // 显示 Toast
+        function showToast(msg) {
+            const existing = document.querySelector('.toast');
+            if (existing) existing.remove();
+            
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerHTML = `✓ ${msg}`;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => toast.remove(), 2500);
+        }
+        
+        // 初始化
+        addLog('INFO', '系统初始化', '页面加载完成，等待操作...');
+    </script>
+</body>
+</html>

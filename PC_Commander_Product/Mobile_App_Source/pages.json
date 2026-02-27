@@ -1,0 +1,65 @@
+{
+	"pages": [
+		{
+			"path": "pages/launch/launch",
+			"style": {
+				"navigationStyle": "custom",
+				"enablePullDownRefresh": false
+			}
+		},
+		{
+			"path": "pages/index/index",
+			"style": {
+				"navigationStyle": "custom",
+				"enablePullDownRefresh": false
+			}
+		},
+		{
+			"path": "pages/settings/settings",
+			"style": {
+				"navigationStyle": "custom",
+				"enablePullDownRefresh": false
+			}
+		},
+		{
+			"path": "pages/config/api",
+			"style": {
+				"navigationStyle": "custom",
+				"enablePullDownRefresh": false
+			}
+		}
+	],
+	"globalStyle": {
+		"navigationBarTextStyle": "white",
+		"navigationBarTitleText": "OpenCode Remote",
+		"navigationBarBackgroundColor": "#0d1225",
+		"backgroundColor": "#0d1225"
+	},
+	"tabBar": {
+		"list": [
+			{
+				"pagePath": "pages/index/index",
+				"text": "控制",
+				"iconPath": "static/icons/control.svg",
+				"selectedIconPath": "static/icons/control-active.svg"
+			},
+			{
+				"pagePath": "pages/config/api",
+				"text": "API",
+				"iconPath": "static/icons/api.svg",
+				"selectedIconPath": "static/icons/api-active.svg"
+			},
+			{
+				"pagePath": "pages/settings/settings",
+				"text": "设置",
+				"iconPath": "static/icons/settings.svg",
+				"selectedIconPath": "static/icons/settings-active.svg"
+			}
+		],
+		"backgroundColor": "#0d1225",
+		"borderStyle": "black",
+		"selectedColor": "#00d4ff",
+		"color": "#666"
+	},
+	"condition": {}
+}

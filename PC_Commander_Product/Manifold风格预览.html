@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manifold AI 风格 API 配置</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #FFFFFF;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .phone {
+            width: 375px;
+            min-height: 812px;
+            background: #FFFFFF;
+            border-radius: 40px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* 导航栏 */
+        .nav {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+            padding: 50px 20px 0;
+            height: 94px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .nav-back {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        
+        .arrow {
+            font-size: 20px;
+            color: #0F2943;
+        }
+        
+        .nav-brand {
+            font-size: 18px;
+            font-weight: 700;
+            color: #0F2943;
+            letter-spacing: -0.5px;
+        }
+        
+        .nav-lang {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            cursor: pointer;
+            border-radius: 8px;
+        }
+        
+        /* 内容 */
+        .content {
+            padding: 0 24px;
+            height: calc(812px - 94px);
+            overflow-y: auto;
+        }
+        
+        /* Hero */
+        .hero {
+            padding: 40px 0 32px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+        }
+        
+        .hero-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #6B7280;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+        
+        .hero-title {
+            display: block;
+            font-size: 40px;
+            font-weight: 700;
+            color: #0F2943;
+            line-height: 1.2;
+            margin-bottom: 8px;
+        }
+        
+        .hero-subtitle {
+            display: block;
+            font-size: 16px;
+            color: #6B7280;
+        }
+        
+        /* Section */
+        .section-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: #6B7280;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 16px;
+            margin-top: 32px;
+        }
+        
+        /* Status Grid */
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+        
+        .status-item {
+            background: #F9FAFB;
+            border: 1px solid transparent;
+            border-radius: 12px;
+            padding: 20px 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .status-item:hover {
+            background: #F3F4F6;
+        }
+        
+        .status-item.active {
+            background: #FFFFFF;
+            border-color: #0F2943;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #D1D5DB;
+        }
+        
+        .status-item.active .status-dot {
+            background: #0F2943;
+        }
+        
+        .status-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #111827;
+        }
+        
+        .status-text {
+            font-size: 11px;
+            font-weight: 500;
+            color: #6B7280;
+        }
+        
+        /* Provider Block */
+        .provider-block {
+            background: #FFFFFF;
+            border: 1px solid #E5E7EB;
+            border-radius: 16px;
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+        
+        .provider-block.expanded {
+            border-color: #0F2943;
+        }
+        
+        .block-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px;
+            cursor: pointer;
+        }
+        
+        .block-meta {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+        }
+        
+        .block-number {
+            font-size: 12px;
+            font-weight: 600;
+            color: #9CA3AF;
+            font-family: 'SF Mono', monospace;
+        }
+        
+        .block-title-wrap {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .block-title {
+            font-size: 17px;
+            font-weight: 600;
+            color: #111827;
+        }
+        
+        .block-desc {
+            font-size: 13px;
+            color: #6B7280;
+        }
+        
+        .toggle-switch {
+            width: 48px;
+            height: 28px;
+            background: #E5E7EB;
+            border-radius: 14px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .toggle-switch.on {
+            background: #0F2943;
+        }
+        
+        .toggle-knob {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            background: #FFFFFF;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s;
+        }
+        
+        .toggle-switch.on .toggle-knob {
+            transform: translateX(20px);
+        }
+        
+        .block-content {
+            padding: 0 20px 20px;
+            border-top: 1px solid #F3F4F6;
+        }
+        
+        .form-group {
+            padding-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .field-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #374151;
+        }
+        
+        .field-input {
+            height: 48px;
+            background: #F9FAFB;
+            border: 1px solid #E5E7EB;
+            border-radius: 10px;
+            padding: 0 16px;
+            font-size: 15px;
+            color: #111827;
+            outline: none;
+        }
+        
+        .field-input:focus {
+            background: #FFFFFF;
+            border-color: #0F2943;
+        }
+        
+        .option-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .option-item {
+            padding: 10px 16px;
+            background: #F9FAFB;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #6B7280;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .option-item:hover, .option-item.active {
+            background: #0F2943;
+            color: #FFFFFF;
+        }
+        
+        .action-btn {
+            width: 100%;
+            height: 48px;
+            background: #0F2943;
+            border: none;
+            border-radius: 10px;
+            color: #FFFFFF;
+            font-size: 15px;
+            font-weight: 600;
+            margin-top: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .action-btn:hover {
+            background: #1a3d5c;
+        }
+        
+        .action-btn.secondary {
+            background: #FFFFFF;
+            color: #0F2943;
+            border: 1px solid #E5E7EB;
+        }
+        
+        /* Settings */
+        .settings-list {
+            background: #FFFFFF;
+            border: 1px solid #E5E7EB;
+            border-radius: 16px;
+            overflow: hidden;
+        }
+        
+        .setting-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+        }
+        
+        .setting-item:not(:last-child) {
+            border-bottom: 1px solid #F3F4F6;
+        }
+        
+        .setting-label {
+            font-size: 15px;
+            font-weight: 500;
+            color: #111827;
+        }
+        
+        .setting-hint {
+            font-size: 13px;
+            color: #6B7280;
+        }
+        
+        .setting-value {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 15px;
+            font-weight: 500;
+            color: #0F2943;
+        }
+        
+        /* Footer */
+        .footer {
+            margin-top: 40px;
+            padding-bottom: 20px;
+        }
+        
+        .primary-btn {
+            width: 100%;
+            height: 52px;
+            background: #0F2943;
+            border: none;
+            border-radius: 12px;
+            color: #FFFFFF;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .primary-btn:hover {
+            background: #1a3d5c;
+        }
+        
+        .text-btn {
+            width: 100%;
+            height: 48px;
+            background: transparent;
+            border: none;
+            color: #6B7280;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            margin-top: 12px;
+        }
+        
+        .footer-brand {
+            text-align: center;
+            padding: 40px 0;
+        }
+        
+        .footer-brand .brand {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #0F2943;
+            letter-spacing: 0.5px;
+        }
+        
+        .footer-brand .copy {
+            display: block;
+            font-size: 12px;
+            color: #9CA3AF;
+            margin-top: 4px;
+        }
+        
+        .safe-area {
+            height: 40px;
+        }
+        
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #0F2943;
+            padding: 14px 24px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 200;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            animation: slideDown 0.3s ease;
+        }
+        
+        .toast-icon {
+            font-size: 16px;
+        }
+        
+        .toast-text {
+            color: #FFFFFF;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+        
+        /* Info Panel */
+        .info-panel {
+            position: fixed;
+            right: 40px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #FFFFFF;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            max-width: 300px;
+        }
+        
+        .info-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #0F2943;
+            margin-bottom: 16px;
+        }
+        
+        .info-list {
+            list-style: none;
+            color: #6B7280;
+            font-size: 14px;
+            line-height: 2;
+        }
+        
+        .info-list li::before {
+            content: '• ';
+            color: #0F2943;
+            font-weight: bold;
+        }
+        
+        @media (max-width: 1200px) {
+            .info-panel { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="phone">
+        <!-- 导航 -->
+        <div class="nav">
+            <div class="nav-back">
+                <span class="arrow">←</span>
+            </div>
+            <span class="nav-brand">Manifold</span>
+            <div class="nav-lang" onclick="toggleLang()">
+                <span id="langIcon">🇨🇳</span>
+            </div>
+        </div>
+        
+        <!-- 内容 -->
+        <div class="content">
+            <!-- Hero -->
+            <div class="hero">
+                <span class="hero-label">API Configuration</span>
+                <span class="hero-title">Better AI</span>
+                <span class="hero-subtitle">Configure your AI providers</span>
+            </div>
+            
+            <!-- Status -->
+            <div class="section-label">System Status</div>
+            <div class="status-grid">
+                <div class="status-item active" onclick="showToast('已连接')">
+                    <div class="status-dot"></div>
+                    <div class="status-name">OpenCode</div>
+                    <div class="status-text">Online</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-dot"></div>
+                    <div class="status-name">OpenClaw</div>
+                    <div class="status-text">Offline</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-dot"></div>
+                    <div class="status-name">OpenAI</div>
+                    <div class="status-text">Offline</div>
+                </div>
+            </div>
+            
+            <!-- Config -->
+            <div class="section-label">Provider Settings</div>
+            
+            <div class="provider-block expanded">
+                <div class="block-header" onclick="toggleBlock(this)">
+                    <div class="block-meta">
+                        <span class="block-number">01</span>
+                        <div class="block-title-wrap">
+                            <span class="block-title">OpenCode</span>
+                            <span class="block-desc">Local AI Coding Assistant</span>
+                        </div>
+                    </div>
+                    <div class="toggle-switch on" onclick="toggleSwitch(event, this)">
+                        <div class="toggle-knob"></div>
+                    </div>
+                </div>
+                <div class="block-content">
+                    <div class="form-group">
+                        <label class="field-label">API Endpoint</label>
+                        <input class="field-input" value="http://localhost:12345" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label class="field-label">Model</label>
+                        <div class="option-list">
+                            <span class="option-item active">claude-3-opus</span>
+                            <span class="option-item">gpt-4</span>
+                            <span class="option-item">gpt-3.5</span>
+                        </div>
+                    </div>
+                    <button class="action-btn">Test Connection</button>
+                </div>
+            </div>
+            
+            <div class="provider-block">
+                <div class="block-header" onclick="toggleBlock(this)">
+                    <div class="block-meta">
+                        <span class="block-number">02</span>
+                        <div class="block-title-wrap">
+                            <span class="block-title">OpenClaw</span>
+                            <span class="block-desc">Personal AI Agent</span>
+                        </div>
+                    </div>
+                    <div class="toggle-switch" onclick="toggleSwitch(event, this)">
+                        <div class="toggle-knob"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Settings -->
+            <div class="section-label">Global Settings</div>
+            <div class="settings-list">
+                <div class="setting-item">
+                    <span class="setting-label">Default Provider</span>
+                    <div class="setting-value">
+                        <span>Auto</span>
+                        <span>→</span>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <div>
+                        <span class="setting-label">Timeout</span>
+                        <div class="setting-hint">60s</div>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <div>
+                        <span class="setting-label">Stream Mode</span>
+                        <div class="setting-hint">Real-time response</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <div class="footer">
+                <button class="primary-btn" onclick="showToast('配置已保存')">Save Configs</button>
+                <button class="text-btn">Reset</button>
+            </div>
+            
+            <div class="footer-brand">
+                <span class="brand">Manifold AI</span>
+                <span class="copy">© 2025 All rights reserved</span>
+            </div>
+            
+            <div class="safe-area"></div>
+        </div>
+    </div>
+    
+    <!-- Info Panel -->
+    <div class="info-panel">
+        <div class="info-title">✨ Manifold AI 风格</div>
+        <ul class="info-list">
+            <li>白色背景 + 深蓝主色</li>
+            <li>大号标题字体</li>
+            <li>编号区块设计</li>
+            <li>简洁开关组件</li>
+            <li>专业科技感</li>
+            <li>清晰信息层级</li>
+        </ul>
+    </div>
+    
+    <script>
+        let isCN = true;
+        
+        function toggleLang() {
+            isCN = !isCN;
+            document.getElementById('langIcon').textContent = isCN ? '🇨🇳' : '🇺🇸';
+            showToast(isCN ? '已切换为中文' : 'Switched to English');
+        }
+        
+        function toggleSwitch(e, el) {
+            e.stopPropagation();
+            el.classList.toggle('on');
+        }
+        
+        function toggleBlock(header) {
+            const block = header.closest('.provider-block');
+            block.classList.toggle('expanded');
+        }
+        
+        function showToast(msg) {
+            const existing = document.querySelector('.toast');
+            if (existing) existing.remove();
+            
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerHTML = `
+                <span class="toast-icon">✓</span>
+                <span class="toast-text">${msg}</span>
+            `;
+            document.querySelector('.phone').appendChild(toast);
+            
+            setTimeout(() => toast.remove(), 2500);
+        }
+        
+        document.querySelectorAll('.option-item').forEach(item => {
+            item.addEventListener('click', function() {
+                this.parentElement.querySelectorAll('.option-item').forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,111 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main, master ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: gradle
+    
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+      working-directory: ./PC_Commander_APK
+    
+    - name: Cache Gradle packages
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
+    
+    - name: Build Debug APK
+      run: ./gradlew assembleDebug
+      working-directory: ./PC_Commander_APK
+    
+    - name: Build Release APK
+      run: ./gradlew assembleRelease
+      working-directory: ./PC_Commander_APK
+    
+    - name: Upload Debug APK
+      uses: actions/upload-artifact@v3
+      with:
+        name: debug-apk
+        path: PC_Commander_APK/app/build/outputs/apk/debug/app-debug.apk
+    
+    - name: Upload Release APK
+      uses: actions/upload-artifact@v3
+      with:
+        name: release-apk
+        path: PC_Commander_APK/app/build/outputs/apk/release/app-release-unsigned.apk
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+    - name: Download Debug APK
+      uses: actions/download-artifact@v3
+      with:
+        name: debug-apk
+        path: ./artifacts/debug
+    
+    - name: Download Release APK
+      uses: actions/download-artifact@v3
+      with:
+        name: release-apk
+        path: ./artifacts/release
+    
+    - name: Rename APKs
+      run: |
+        mv ./artifacts/debug/app-debug.apk ./artifacts/PC_Commander_${{ github.ref_name }}_debug.apk
+        mv ./artifacts/release/app-release-unsigned.apk ./artifacts/PC_Commander_${{ github.ref_name }}_release.apk
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: ./artifacts/*.apk
+        name: Release ${{ github.ref_name }}
+        body: |
+          ## PC Commander ${{ github.ref_name }}
+          
+          ### 下载
+          - 📱 **Debug 版本**（测试用）: `PC_Commander_${{ github.ref_name }}_debug.apk`
+          - 📦 **Release 版本**（正式用）: `PC_Commander_${{ github.ref_name }}_release.apk`
+          
+          ### 安装说明
+          1. 下载 APK 文件
+          2. 在 Android 手机上安装
+          3. 允许"未知来源"安装
+          4. 打开应用并配置服务器地址
+          
+          ### 功能特性
+          - 远程控制 PC
+          - AI 聊天助手
+          - 终端命令执行
+          - 中英文切换
+          
+          ### 系统要求
+          - Android 5.0+ (API 21+)
+          - 与 PC 在同一网络
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

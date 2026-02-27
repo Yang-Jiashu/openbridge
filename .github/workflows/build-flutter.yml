@@ -1,0 +1,152 @@
+name: Build Flutter App
+
+on:
+  push:
+    branches: [ main, master, develop ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ main, master ]
+
+env:
+  FLUTTER_VERSION: '3.16.0'
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: ${{ env.FLUTTER_VERSION }}
+        channel: 'stable'
+        cache: true
+    
+    - name: Install dependencies
+      run: flutter pub get
+      working-directory: ./flutter_app
+    
+    - name: Analyze code
+      run: flutter analyze
+      working-directory: ./flutter_app
+    
+    - name: Run tests
+      run: flutter test
+      working-directory: ./flutter_app
+    
+    - name: Build APK
+      run: flutter build apk --release
+      working-directory: ./flutter_app
+    
+    - name: Upload APK
+      uses: actions/upload-artifact@v3
+      with:
+        name: flutter-apk
+        path: flutter_app/build/app/outputs/flutter-apk/app-release.apk
+
+  build-ios:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: ${{ env.FLUTTER_VERSION }}
+        channel: 'stable'
+        cache: true
+    
+    - name: Install dependencies
+      run: flutter pub get
+      working-directory: ./flutter_app
+    
+    - name: Build iOS
+      run: flutter build ios --release --no-codesign
+      working-directory: ./flutter_app
+    
+    - name: Create IPA
+      run: |
+        mkdir -p flutter_app/build/ios/iphoneos/Payload
+        cp -r flutter_app/build/ios/iphoneos/Runner.app flutter_app/build/ios/iphoneos/Payload/
+        cd flutter_app/build/ios/iphoneos/
+        zip -r app-release.ipa Payload
+    
+    - name: Upload IPA
+      uses: actions/upload-artifact@v3
+      with:
+        name: ios-ipa
+        path: flutter_app/build/ios/iphoneos/app-release.ipa
+
+  release:
+    needs: [build-android, build-ios]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+    - name: Download Android APK
+      uses: actions/download-artifact@v3
+      with:
+        name: flutter-apk
+        path: ./artifacts/android
+    
+    - name: Download iOS IPA
+      uses: actions/download-artifact@v3
+      with:
+        name: ios-ipa
+        path: ./artifacts/ios
+    
+    - name: Rename artifacts
+      run: |
+        mv ./artifacts/android/app-release.apk ./artifacts/PC_Commander_${{ github.ref_name }}_Android.apk
+        mv ./artifacts/ios/app-release.ipa ./artifacts/PC_Commander_${{ github.ref_name }}_iOS.ipa
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: ./artifacts/*
+        name: PC Commander ${{ github.ref_name }}
+        body: |
+          ## PC Commander ${{ github.ref_name }} 🚀
+          
+          ### 📱 下载安装包
+          
+          #### Android
+          - **APK**: `PC_Commander_${{ github.ref_name }}_Android.apk`
+          - 系统要求: Android 5.0+ (API 21+)
+          - 安装方式: 下载后点击安装，允许"未知来源"
+          
+          #### iOS
+          - **IPA**: `PC_Commander_${{ github.ref_name }}_iOS.ipa`
+          - 系统要求: iOS 11.0+
+          - 安装方式: 需要签名或使用 TestFlight
+          
+          ### ✨ 功能特性
+          - 🌐 跨平台支持 (Android/iOS/Web/Desktop)
+          - 🤖 AI 智能助手
+          - 💻 远程终端控制
+          - 📂 文件传输管理
+          - 🌍 多语言支持 (中/英/日/韩)
+          - 🔒 端到端加密
+          
+          ### 🚀 快速开始
+          1. 下载对应平台的安装包
+          2. 安装并打开应用
+          3. 配置 PC 服务器地址
+          4. 开始远程控制！
+          
+          ### 📝 更新日志
+          查看 [CHANGELOG.md](../CHANGELOG.md) 了解详细更新内容
+          
+          ### 🤝 参与贡献
+          欢迎提交 Issue 和 Pull Request!
+          
+          ### 📄 开源协议
+          MIT License
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

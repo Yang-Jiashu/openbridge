@@ -1,0 +1,30 @@
+{
+  "opencode": {
+    "baseURL": "http://localhost:12345",
+    "model": "claude-3-opus",
+    "enabled": true
+  },
+  "openclaw": {
+    "enabled": false,
+    "gatewayUrl": "ws://localhost:18789",
+    "token": "",
+    "agentId": "main"
+  },
+  "openai": {
+    "enabled": false,
+    "apiKey": "",
+    "baseURL": "https://api.openai.com/v1",
+    "model": "gpt-4"
+  },
+  "anthropic": {
+    "enabled": false,
+    "apiKey": "",
+    "baseURL": "https://api.anthropic.com",
+    "model": "claude-3-opus-20240229"
+  },
+  "global": {
+    "defaultProvider": "auto",
+    "timeout": 60000,
+    "streamMode": true
+  }
+}

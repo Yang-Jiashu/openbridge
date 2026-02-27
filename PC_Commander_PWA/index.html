@@ -1,0 +1,1333 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0F2943">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="PC Commander">
+    <meta name="description" content="PC Commander - 手机远程控制PC">
+    <title>PC Commander</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #F3F4F6;
+            height: 100vh;
+            height: 100dvh;
+            overflow: hidden;
+        }
+        
+        /* 防止橡皮筋效果 */
+        .app-container {
+            height: 100%;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior-y: contain;
+        }
+        
+        /* 状态栏 */
+        .status-bar {
+            background: #0F2943;
+            color: white;
+            padding: 8px 16px;
+            padding-top: env(safe-area-inset-top, 20px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .status-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #EF4444;
+        }
+        
+        .status-dot.online {
+            background: #10B981;
+            box-shadow: 0 0 8px #10B981;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* 页面切换 */
+        .page {
+            display: none;
+            min-height: calc(100vh - 56px - env(safe-area-inset-top));
+            padding-bottom: calc(80px + env(safe-area-inset-bottom));
+        }
+        
+        .page.active {
+            display: block;
+        }
+        
+        /* 首页 */
+        .home-header {
+            background: linear-gradient(135deg, #0F2943 0%, #1a4a6e 100%);
+            color: white;
+            padding: 24px 20px;
+            border-radius: 0 0 24px 24px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-top: 20px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.7;
+            margin-top: 4px;
+        }
+        
+        .server-url {
+            text-align: center;
+            font-size: 12px;
+            opacity: 0.5;
+            margin-top: 16px;
+        }
+        
+        /* 快捷操作 */
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #0F2943;
+            margin: 24px 16px 16px;
+        }
+        
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            padding: 0 16px;
+        }
+        
+        .action-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            transition: transform 0.2s;
+        }
+        
+        .action-card:active {
+            transform: scale(0.98);
+        }
+        
+        .action-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px;
+            font-size: 28px;
+        }
+        
+        .action-icon.blue { background: rgba(0,212,255,0.1); }
+        .action-icon.green { background: rgba(16,185,129,0.1); }
+        .action-icon.orange { background: rgba(245,158,11,0.1); }
+        .action-icon.purple { background: rgba(139,92,246,0.1); }
+        
+        .action-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #0F2943;
+        }
+        
+        /* 最近活动 */
+        .activity-list {
+            background: white;
+            border-radius: 16px;
+            margin: 0 16px;
+            padding: 8px 0;
+        }
+        
+        .activity-item {
+            display: flex;
+            align-items: center;
+            padding: 16px;
+            border-bottom: 1px solid #F3F4F6;
+        }
+        
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+        
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin-right: 12px;
+        }
+        
+        .activity-content {
+            flex: 1;
+        }
+        
+        .activity-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #0F2943;
+        }
+        
+        .activity-time {
+            font-size: 12px;
+            color: #9CA3AF;
+            margin-top: 2px;
+        }
+        
+        /* 配置页面 */
+        .config-section {
+            background: white;
+            border-radius: 16px;
+            margin: 16px;
+            padding: 20px;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        .input-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 8px;
+            display: block;
+        }
+        
+        .input-field {
+            width: 100%;
+            background: #F9FAFB;
+            border: 1px solid #E5E7EB;
+            border-radius: 12px;
+            padding: 14px 16px;
+            font-size: 16px;
+            color: #0F2943;
+            transition: border-color 0.2s;
+        }
+        
+        .input-field:focus {
+            outline: none;
+            border-color: #0F2943;
+        }
+        
+        .input-hint {
+            font-size: 12px;
+            color: #9CA3AF;
+            margin-top: 6px;
+        }
+        
+        /* 语言选择 */
+        .language-selector {
+            display: flex;
+            gap: 8px;
+            background: #F3F4F6;
+            padding: 4px;
+            border-radius: 10px;
+        }
+        
+        .lang-btn {
+            flex: 1;
+            padding: 10px 16px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 500;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        
+        .lang-btn.active {
+            background: #0F2943;
+            color: white;
+        }
+        
+        .lang-btn:not(.active) {
+            color: #6B7280;
+        }
+        
+        /* 按钮 */
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            margin: 16px;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            text-align: center;
+            cursor: pointer;
+            border: none;
+            transition: opacity 0.2s;
+        }
+        
+        .btn:active {
+            opacity: 0.9;
+        }
+        
+        .btn-primary {
+            background: #00D4FF;
+            color: white;
+        }
+        
+        .btn-success {
+            background: #10B981;
+            color: white;
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* 日志区域 */
+        .log-container {
+            background: #1a1a2e;
+            border-radius: 12px;
+            padding: 12px;
+            margin: 16px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        
+        .log-item {
+            margin-bottom: 6px;
+            line-height: 1.5;
+        }
+        
+        .log-time {
+            color: #6B7280;
+        }
+        
+        .log-info { color: #00D4FF; }
+        .log-success { color: #10B981; }
+        .log-error { color: #EF4444; }
+        
+        /* 聊天页面 */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 56px - env(safe-area-inset-top));
+        }
+        
+        .quick-commands {
+            display: flex;
+            gap: 8px;
+            padding: 12px 16px;
+            background: white;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-bottom: 1px solid #E5E7EB;
+        }
+        
+        .quick-cmd {
+            white-space: nowrap;
+            padding: 8px 14px;
+            background: #F3F4F6;
+            border-radius: 20px;
+            font-size: 13px;
+            color: #0F2943;
+            cursor: pointer;
+        }
+        
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            padding-bottom: 100px;
+        }
+        
+        .message {
+            display: flex;
+            margin-bottom: 16px;
+            max-width: 85%;
+        }
+        
+        .message.user {
+            margin-left: auto;
+            flex-direction: row-reverse;
+        }
+        
+        .message-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+            margin: 0 8px;
+        }
+        
+        .message-avatar.ai {
+            background: #0F2943;
+        }
+        
+        .message-avatar.user {
+            background: #10B981;
+        }
+        
+        .message-bubble {
+            padding: 12px 16px;
+            border-radius: 16px;
+            max-width: calc(100% - 52px);
+        }
+        
+        .message-bubble.ai {
+            background: white;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .message-bubble.user {
+            background: #0F2943;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+        
+        .message-text {
+            font-size: 15px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        
+        .message-time {
+            font-size: 11px;
+            color: #9CA3AF;
+            margin-top: 4px;
+        }
+        
+        .chat-input-area {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 12px 16px;
+            padding-bottom: calc(12px + env(safe-area-inset-bottom));
+            border-top: 1px solid #E5E7EB;
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+        
+        .chat-input {
+            flex: 1;
+            background: #F3F4F6;
+            border: none;
+            border-radius: 24px;
+            padding: 12px 18px;
+            font-size: 16px;
+            max-height: 120px;
+            resize: none;
+            font-family: inherit;
+        }
+        
+        .chat-input:focus {
+            outline: none;
+        }
+        
+        .send-btn {
+            width: 48px;
+            height: 48px;
+            background: #0F2943;
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .send-btn:disabled {
+            background: #D1D5DB;
+        }
+        
+        /* 终端页面 */
+        .terminal {
+            background: #0a0a0f;
+            color: #E5E7EB;
+            font-family: monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            padding: 16px;
+            min-height: calc(100vh - 56px - env(safe-area-inset-top));
+            padding-bottom: 120px;
+        }
+        
+        .terminal-line {
+            margin-bottom: 8px;
+        }
+        
+        .terminal-prompt {
+            color: #00D4FF;
+        }
+        
+        .terminal-input {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .terminal-input input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #E5E7EB;
+            font-family: monospace;
+            font-size: 14px;
+            outline: none;
+        }
+        
+        .terminal-output {
+            color: #E5E7EB;
+        }
+        
+        .terminal-error {
+            color: #EF4444;
+        }
+        
+        /* 底部导航 */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+            padding-bottom: calc(8px + env(safe-area-inset-bottom));
+            border-top: 1px solid #E5E7EB;
+            z-index: 100;
+        }
+        
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 4px;
+            cursor: pointer;
+            color: #9CA3AF;
+            transition: color 0.2s;
+        }
+        
+        .nav-item.active {
+            color: #0F2943;
+        }
+        
+        .nav-icon {
+            font-size: 24px;
+        }
+        
+        .nav-label {
+            font-size: 11px;
+            font-weight: 500;
+        }
+        
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: #0F2943;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 1000;
+            opacity: 0;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+        
+        .toast.error {
+            background: #EF4444;
+        }
+        
+        .toast.success {
+            background: #10B981;
+        }
+        
+        /* 安装提示 */
+        .install-banner {
+            position: fixed;
+            bottom: calc(70px + env(safe-area-inset-bottom));
+            left: 16px;
+            right: 16px;
+            background: #0F2943;
+            color: white;
+            padding: 16px;
+            border-radius: 12px;
+            display: none;
+            z-index: 99;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        
+        .install-banner.show {
+            display: block;
+        }
+        
+        .install-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .install-text {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+        
+        .install-btn {
+            margin-top: 12px;
+            background: white;
+            color: #0F2943;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        /* 加载动画 */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- 状态栏 -->
+        <div class="status-bar">
+            <div class="status-title" data-i18n="appName">PC Commander</div>
+            <div class="status-indicator">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">离线</span>
+            </div>
+        </div>
+        
+        <!-- 首页 -->
+        <div class="page active" id="page-home">
+            <div class="home-header">
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value" id="cmdCount">0</div>
+                        <div class="stat-label" data-i18n="commands">命令</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="uptime">0m</div>
+                        <div class="stat-label" data-i18n="uptime">运行</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="latency">--</div>
+                        <div class="stat-label" data-i18n="latency">延迟</div>
+                    </div>
+                </div>
+                <div class="server-url" id="serverUrlDisplay">未配置</div>
+            </div>
+            
+            <div class="section-title" data-i18n="quickActions">快速操作</div>
+            <div class="quick-actions">
+                <div class="action-card" onclick="showPage('chat')">
+                    <div class="action-icon blue">🤖</div>
+                    <div class="action-label" data-i18n="aiAssistant">AI助手</div>
+                </div>
+                <div class="action-card" onclick="showPage('terminal')">
+                    <div class="action-icon green">💻</div>
+                    <div class="action-label" data-i18n="terminal">终端</div>
+                </div>
+                <div class="action-card" onclick="showToast('功能开发中...')">
+                    <div class="action-icon orange">📂</div>
+                    <div class="action-label" data-i18n="files">文件</div>
+                </div>
+                <div class="action-card" onclick="showPage('config')">
+                    <div class="action-icon purple">⚙️</div>
+                    <div class="action-label" data-i18n="settings">配置</div>
+                </div>
+            </div>
+            
+            <div class="section-title" data-i18n="recentActivity">最近活动</div>
+            <div class="activity-list" id="activityList">
+                <div class="activity-item">
+                    <div class="activity-icon" style="background: rgba(16,185,129,0.1);">✓</div>
+                    <div class="activity-content">
+                        <div class="activity-title" data-i18n="appReady">应用已就绪</div>
+                        <div class="activity-time">刚刚</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 配置页面 -->
+        <div class="page" id="page-config">
+            <div class="config-section">
+                <div class="input-group">
+                    <label class="input-label" data-i18n="serverUrl">服务器地址</label>
+                    <input type="text" class="input-field" id="serverUrl" placeholder="http://192.168.1.5:8000">
+                    <div class="input-hint" data-i18n="serverHint">输入PC服务器的IP地址</div>
+                </div>
+                
+                <div class="input-group">
+                    <label class="input-label" data-i18n="language">语言</label>
+                    <div class="language-selector">
+                        <div class="lang-btn active" onclick="setLanguage('zh-CN')" data-lang="zh-CN">中文</div>
+                        <div class="lang-btn" onclick="setLanguage('en-US')" data-lang="en-US">English</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="testConnection()" id="testBtn">
+                    <span data-i18n="testConnection">测试连接</span>
+                </button>
+                <button class="btn btn-success" onclick="saveConfig()" id="saveBtn">
+                    <span data-i18n="saveConfig">保存配置</span>
+                </button>
+            </div>
+            
+            <div class="section-title">API 日志</div>
+            <div class="log-container" id="logContainer">
+                <div class="log-item log-info">
+                    <span class="log-time">--:--</span>
+                    <span data-i18n="noLogs">暂无日志</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 聊天页面 -->
+        <div class="page" id="page-chat">
+            <div class="chat-container">
+                <div class="quick-commands">
+                    <div class="quick-cmd" onclick="sendQuickCmd('ls -la')">ls -la</div>
+                    <div class="quick-cmd" onclick="sendQuickCmd('pwd')">pwd</div>
+                    <div class="quick-cmd" onclick="sendQuickCmd('systeminfo')">systeminfo</div>
+                    <div class="quick-cmd" onclick="sendQuickCmd('tasklist')">tasklist</div>
+                </div>
+                
+                <div class="messages" id="messages">
+                    <div class="message ai">
+                        <div class="message-avatar ai">🤖</div>
+                        <div class="message-bubble ai">
+                            <div class="message-text" data-i18n="welcomeMsg">欢迎使用 PC Commander！
+
+我是你的 AI 助手，可以帮你：
+• 控制电脑执行命令
+• 管理文件和程序
+• 编写和运行代码
+
+请直接输入你的需求。</div>
+                            <div class="message-time">--:--</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chat-input-area">
+                    <textarea class="chat-input" id="chatInput" placeholder="输入命令或消息..." rows="1"></textarea>
+                    <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 终端页面 -->
+        <div class="page" id="page-terminal">
+            <div class="terminal" id="terminal">
+                <div class="terminal-line terminal-prompt">PC Commander Terminal v1.0.0</div>
+                <div class="terminal-line">Type "help" for available commands</div>
+                <div class="terminal-line terminal-input">
+                    <span class="terminal-prompt">➜</span>
+                    <input type="text" id="terminalInput" placeholder="Enter command..." autocomplete="off">
+                </div>
+            </div>
+        </div>
+        
+        <!-- 底部导航 -->
+        <div class="bottom-nav">
+            <div class="nav-item active" onclick="showPage('home')" data-page="home">
+                <div class="nav-icon">🏠</div>
+                <div class="nav-label" data-i18n="navHome">首页</div>
+            </div>
+            <div class="nav-item" onclick="showPage('chat')" data-page="chat">
+                <div class="nav-icon">💬</div>
+                <div class="nav-label" data-i18n="navChat">聊天</div>
+            </div>
+            <div class="nav-item" onclick="showPage('terminal')" data-page="terminal">
+                <div class="nav-icon">💻</div>
+                <div class="nav-label" data-i18n="navTerminal">终端</div>
+            </div>
+            <div class="nav-item" onclick="showPage('config')" data-page="config">
+                <div class="nav-icon">⚙️</div>
+                <div class="nav-label" data-i18n="navConfig">配置</div>
+            </div>
+        </div>
+        
+        <!-- 安装提示 -->
+        <div class="install-banner" id="installBanner">
+            <div class="install-title">添加到主屏幕</div>
+            <div class="install-text">将此应用添加到主屏幕，像原生App一样使用</div>
+            <button class="install-btn" onclick="installPWA()">添加</button>
+        </div>
+        
+        <!-- Toast -->
+        <div class="toast" id="toast"></div>
+    </div>
+    
+    <script>
+        // 多语言
+        const i18n = {
+            'zh-CN': {
+                appName: 'PC Commander',
+                commands: '命令',
+                uptime: '运行',
+                latency: '延迟',
+                quickActions: '快速操作',
+                aiAssistant: 'AI助手',
+                terminal: '终端',
+                files: '文件',
+                settings: '配置',
+                recentActivity: '最近活动',
+                appReady: '应用已就绪',
+                serverUrl: '服务器地址',
+                serverHint: '输入PC服务器的IP地址',
+                language: '语言',
+                testConnection: '测试连接',
+                saveConfig: '保存配置',
+                noLogs: '暂无日志',
+                welcomeMsg: `欢迎使用 PC Commander！
+
+我是你的 AI 助手，可以帮你：
+• 控制电脑执行命令
+• 管理文件和程序
+• 编写和运行代码
+
+请直接输入你的需求。`,
+                navHome: '首页',
+                navChat: '聊天',
+                navTerminal: '终端',
+                navConfig: '配置',
+                offline: '离线',
+                online: '在线',
+                configSaved: '配置已保存',
+                connectionSuccess: '连接成功',
+                connectionFailed: '连接失败',
+                enterServerUrl: '请输入服务器地址'
+            },
+            'en-US': {
+                appName: 'PC Commander',
+                commands: 'Cmds',
+                uptime: 'Uptime',
+                latency: 'Ping',
+                quickActions: 'Quick Actions',
+                aiAssistant: 'AI Assistant',
+                terminal: 'Terminal',
+                files: 'Files',
+                settings: 'Settings',
+                recentActivity: 'Recent Activity',
+                appReady: 'App is ready',
+                serverUrl: 'Server URL',
+                serverHint: 'Enter PC server IP address',
+                language: 'Language',
+                testConnection: 'Test Connection',
+                saveConfig: 'Save Config',
+                noLogs: 'No logs',
+                welcomeMsg: `Welcome to PC Commander!
+
+I'm your AI assistant. I can help you:
+• Control your PC with commands
+• Manage files and programs
+• Write and run code
+
+What would you like to do?`,
+                navHome: 'Home',
+                navChat: 'Chat',
+                navTerminal: 'Terminal',
+                navConfig: 'Config',
+                offline: 'Offline',
+                online: 'Online',
+                configSaved: 'Config saved',
+                connectionSuccess: 'Connection successful',
+                connectionFailed: 'Connection failed',
+                enterServerUrl: 'Please enter server URL'
+            }
+        };
+        
+        let currentLang = localStorage.getItem('language') || 'zh-CN';
+        let config = JSON.parse(localStorage.getItem('serverConfig')) || {};
+        let isConnected = false;
+        let deferredPrompt = null;
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadConfig();
+            applyLanguage();
+            checkConnection();
+            setupEventListeners();
+            checkInstallable();
+        });
+        
+        // 设置事件监听
+        function setupEventListeners() {
+            // 聊天输入框自动增高
+            const chatInput = document.getElementById('chatInput');
+            chatInput.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+            });
+            
+            // 终端输入
+            const terminalInput = document.getElementById('terminalInput');
+            terminalInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    executeTerminalCommand(this.value);
+                    this.value = '';
+                }
+            });
+            
+            // 聊天发送
+            chatInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+        }
+        
+        // 页面切换
+        function showPage(page) {
+            // 隐藏所有页面
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            
+            // 显示目标页面
+            document.getElementById('page-' + page).classList.add('active');
+            document.querySelector('.nav-item[data-page="' + page + '"]').classList.add('active');
+            
+            // 滚动到顶部
+            document.querySelector('.app-container').scrollTop = 0;
+        }
+        
+        // 语言设置
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('language', lang);
+            
+            // 更新按钮状态
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.lang === lang);
+            });
+            
+            applyLanguage();
+        }
+        
+        // 应用语言
+        function applyLanguage() {
+            const texts = i18n[currentLang];
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.dataset.i18n;
+                if (texts[key]) {
+                    el.textContent = texts[key];
+                }
+            });
+            
+            // 更新状态文字
+            updateStatusDisplay();
+        }
+        
+        // 加载配置
+        function loadConfig() {
+            document.getElementById('serverUrl').value = config.serverUrl || '';
+            
+            // 设置语言按钮
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.lang === currentLang);
+            });
+            
+            updateServerDisplay();
+        }
+        
+        // 保存配置
+        function saveConfig() {
+            const serverUrl = document.getElementById('serverUrl').value.trim();
+            
+            if (!serverUrl) {
+                showToast(i18n[currentLang].enterServerUrl, 'error');
+                return;
+            }
+            
+            config = {
+                serverUrl: serverUrl,
+                language: currentLang
+            };
+            
+            localStorage.setItem('serverConfig', JSON.stringify(config));
+            localStorage.setItem('language', currentLang);
+            
+            updateServerDisplay();
+            addLog('配置已保存', 'success');
+            showToast(i18n[currentLang].configSaved, 'success');
+        }
+        
+        // 测试连接
+        async function testConnection() {
+            const serverUrl = document.getElementById('serverUrl').value.trim();
+            
+            if (!serverUrl) {
+                showToast(i18n[currentLang].enterServerUrl, 'error');
+                return;
+            }
+            
+            const btn = document.getElementById('testBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span>';
+            
+            addLog('正在测试连接: ' + serverUrl, 'info');
+            
+            try {
+                const startTime = Date.now();
+                const response = await fetch(serverUrl + '/api/health', {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                });
+                
+                const duration = Date.now() - startTime;
+                
+                if (response.ok) {
+                    isConnected = true;
+                    document.getElementById('latency').textContent = duration + 'ms';
+                    addLog(`连接成功! 延迟: ${duration}ms`, 'success');
+                    showToast(i18n[currentLang].connectionSuccess + ` (${duration}ms)`, 'success');
+                    updateStatusDisplay();
+                } else {
+                    throw new Error('HTTP ' + response.status);
+                }
+            } catch (error) {
+                isConnected = false;
+                addLog('连接失败: ' + error.message, 'error');
+                showToast(i18n[currentLang].connectionFailed, 'error');
+                updateStatusDisplay();
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<span data-i18n="testConnection">' + i18n[currentLang].testConnection + '</span>';
+            }
+        }
+        
+        // 检查连接
+        async function checkConnection() {
+            if (!config.serverUrl) return;
+            
+            try {
+                const response = await fetch(config.serverUrl + '/api/health', {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                });
+                isConnected = response.ok;
+            } catch (e) {
+                isConnected = false;
+            }
+            
+            updateStatusDisplay();
+        }
+        
+        // 更新状态显示
+        function updateStatusDisplay() {
+            const dot = document.getElementById('statusDot');
+            const text = document.getElementById('statusText');
+            
+            if (isConnected) {
+                dot.classList.add('online');
+                text.textContent = i18n[currentLang].online;
+            } else {
+                dot.classList.remove('online');
+                text.textContent = i18n[currentLang].offline;
+            }
+        }
+        
+        // 更新服务器显示
+        function updateServerDisplay() {
+            const display = document.getElementById('serverUrlDisplay');
+            display.textContent = config.serverUrl || '未配置';
+        }
+        
+        // 发送消息
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            if (!config.serverUrl) {
+                showToast('请先配置服务器地址', 'error');
+                showPage('config');
+                return;
+            }
+            
+            // 添加用户消息
+            addMessage(message, 'user');
+            input.value = '';
+            input.style.height = 'auto';
+            
+            // 显示加载中
+            const sendBtn = document.getElementById('sendBtn');
+            sendBtn.disabled = true;
+            sendBtn.innerHTML = '<span class="loading"></span>';
+            
+            try {
+                const response = await fetch(config.serverUrl + '/api/chat', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ message: message })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    addMessage(data.response, 'ai');
+                } else {
+                    addMessage('错误: ' + (data.error || '未知错误'), 'ai');
+                }
+            } catch (error) {
+                addMessage('连接失败: ' + error.message + '\n\n请检查:\n1. 服务器是否启动\n2. 网络连接是否正常\n3. 服务器地址是否正确', 'ai');
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.innerHTML = '➤';
+            }
+        }
+        
+        // 添加快捷命令
+        function sendQuickCmd(cmd) {
+            document.getElementById('chatInput').value = cmd;
+        }
+        
+        // 添加消息
+        function addMessage(text, type) {
+            const container = document.getElementById('messages');
+            const time = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+            
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'message ' + type;
+            msgDiv.innerHTML = `
+                <div class="message-avatar ${type}">${type === 'ai' ? '🤖' : '👤'}</div>
+                <div class="message-bubble ${type}">
+                    <div class="message-text">${escapeHtml(text)}</div>
+                    <div class="message-time">${time}</div>
+                </div>
+            `;
+            
+            container.appendChild(msgDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+        
+        // 执行终端命令
+        async function executeTerminalCommand(command) {
+            if (!command.trim()) return;
+            
+            const terminal = document.getElementById('terminal');
+            
+            // 显示命令
+            const cmdLine = document.createElement('div');
+            cmdLine.className = 'terminal-line';
+            cmdLine.innerHTML = `<span class="terminal-prompt">➜</span> ${escapeHtml(command)}`;
+            terminal.insertBefore(cmdLine, terminal.lastElementChild);
+            
+            // 本地命令
+            if (command === 'clear') {
+                terminal.innerHTML = `
+                    <div class="terminal-line terminal-prompt">PC Commander Terminal v1.0.0</div>
+                    <div class="terminal-line">Terminal cleared</div>
+                    <div class="terminal-line terminal-input">
+                        <span class="terminal-prompt">➜</span>
+                        <input type="text" id="terminalInput" placeholder="Enter command..." autocomplete="off">
+                    </div>
+                `;
+                setupEventListeners();
+                return;
+            }
+            
+            if (command === 'help') {
+                const helpLine = document.createElement('div');
+                helpLine.className = 'terminal-line';
+                helpLine.textContent = 'Available commands: clear, help, ls, pwd';
+                terminal.insertBefore(helpLine, terminal.lastElementChild);
+                terminal.scrollTop = terminal.scrollHeight;
+                return;
+            }
+            
+            // 远程执行
+            if (!config.serverUrl) {
+                const errorLine = document.createElement('div');
+                errorLine.className = 'terminal-line terminal-error';
+                errorLine.textContent = 'Error: Server not configured';
+                terminal.insertBefore(errorLine, terminal.lastElementChild);
+                terminal.scrollTop = terminal.scrollHeight;
+                return;
+            }
+            
+            try {
+                const response = await fetch(config.serverUrl + '/api/execute', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ command: command })
+                });
+                
+                const data = await response.json();
+                
+                const outputLine = document.createElement('div');
+                outputLine.className = 'terminal-line ' + (data.success ? 'terminal-output' : 'terminal-error');
+                outputLine.textContent = data.success ? (data.output || 'Success') : (data.error || 'Failed');
+                terminal.insertBefore(outputLine, terminal.lastElementChild);
+            } catch (error) {
+                const errorLine = document.createElement('div');
+                errorLine.className = 'terminal-line terminal-error';
+                errorLine.textContent = 'Error: ' + error.message;
+                terminal.insertBefore(errorLine, terminal.lastElementChild);
+            }
+            
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+        
+        // 添加日志
+        function addLog(message, type) {
+            const container = document.getElementById('logContainer');
+            const time = new Date().toLocaleTimeString('zh-CN');
+            
+            const logDiv = document.createElement('div');
+            logDiv.className = 'log-item log-' + type;
+            logDiv.innerHTML = `<span class="log-time">${time}</span> ${escapeHtml(message)}`;
+            
+            if (container.children.length > 20) {
+                container.removeChild(container.firstElementChild);
+            }
+            
+            container.appendChild(logDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+        
+        // 显示 Toast
+        function showToast(message, type = '') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast show ' + type;
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+        
+        // HTML 转义
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // PWA 安装
+        function checkInstallable() {
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                document.getElementById('installBanner').classList.add('show');
+            });
+            
+            window.addEventListener('appinstalled', () => {
+                document.getElementById('installBanner').classList.remove('show');
+                deferredPrompt = null;
+            });
+        }
+        
+        async function installPWA() {
+            if (!deferredPrompt) return;
+            
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            
+            if (outcome === 'accepted') {
+                document.getElementById('installBanner').classList.remove('show');
+            }
+            
+            deferredPrompt = null;
+        }
+        
+        // 定期刷新连接状态
+        setInterval(checkConnection, 30000);
+    </script>
+</body>
+</html>
