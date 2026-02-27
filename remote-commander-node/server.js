@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const path = require('path');
+const crypto = require('crypto');
 require('dotenv').config();
 
 // 尝试导入 OpenCode SDK
@@ -10,16 +11,47 @@ try {
     const sdk = require('@opencode-ai/sdk');
     Opencode = sdk.default || sdk;
 } catch (e) {
-    console.warn("Warning: @opencode-ai/sdk not found.");
+    console.warn("Warning: @opencode-ai/sdk not found. Running in mock mode.");
 }
 
 const app = express();
 const PORT = process.env.PORT || 8000;
-const MOCK_MODE = process.env.MOCK_MODE === 'true';
+const MOCK_MODE = process.env.MOCK_MODE === 'true' || !Opencode;
 
-app.use(cors());
+// 安全配置
+const API_KEY = process.env.API_KEY || 'openbridge-default-key-change-me';
+const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS?.split(',') || ['*'];
+
+// CORS配置
+app.use(cors({
+    origin: ALLOWED_ORIGINS,
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key']
+}));
+
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
+
+// API密钥认证中间件
+const authenticateApiKey = (req, res, next) => {
+    const clientKey = req.headers['x-api-key'] || req.query.apiKey;
+    
+    if (clientKey !== API_KEY) {
+        console.warn(`[Security] Unauthorized access attempt from ${req.ip}`);
+        return res.status(401).json({ 
+            error: 'Unauthorized', 
+            message: 'Invalid or missing API Key. Please provide X-API-Key header.' 
+        });
+    }
+    next();
+};
+
+// 访问日志
+app.use((req, res, next) => {
+    const timestamp = new Date().toISOString();
+    console.log(`[${timestamp}] ${req.method} ${req.path} - IP: ${req.ip}`);
+    next();
+});
 
 // 初始化 OpenCode Client
 let client = null;
@@ -29,57 +61,62 @@ if (Opencode && !MOCK_MODE) {
             baseURL: process.env.OPENCODE_API_URL || 'http://localhost:12345',
             apiKey: process.env.OPENCODE_API_KEY
         });
-        console.log("OpenCode SDK initialized.");
+        console.log("✓ OpenCode SDK initialized.");
     } catch (e) {
-        console.error("Failed to initialize OpenCode SDK:", e);
+        console.error("✗ Failed to initialize OpenCode SDK:", e);
     }
+} else {
+    console.log("✓ Running in MOCK MODE (OpenCode SDK not available).");
 }
 
 // Session 存储
 let currentSessionId = null;
 
-app.post('/api/chat', async (req, res) => {
-    const userMessage = req.body.message;
-    console.log(`Received message: ${userMessage}`);
+// 健康检查（无需认证）
+app.get('/api/health', (req, res) => {
+    res.json({ 
+        status: 'ok', 
+        timestamp: new Date().toISOString(),
+        mode: MOCK_MODE ? 'mock' : 'live',
+        version: '1.0.0'
+    });
+});
 
-    // Mock 模式或 SDK 未初始化
+// 配置信息（需要认证）
+app.get('/api/config', authenticateApiKey, (req, res) => {
+    res.json({
+        mode: MOCK_MODE ? 'mock' : 'live',
+        opencodeConnected: !!client,
+        serverTime: new Date().toISOString()
+    });
+});
+
+// 聊天接口（需要认证）
+app.post('/api/chat', authenticateApiKey, async (req, res) => {
+    const userMessage = req.body.message;
+    console.log(`[Chat] Received: ${userMessage}`);
+
+    // Mock 模式
     if (!client || MOCK_MODE) {
-        // 模拟一个智能回复
         const mockReply = mockAIResponse(userMessage);
         return res.json({ response: mockReply });
     }
 
     try {
-        // 1. 确保有会话
+        // 确保有会话
         if (!currentSessionId) {
-            console.log("Creating new session...");
+            console.log("[OpenCode] Creating new session...");
             const session = await client.session.create();
             currentSessionId = session.id;
         }
 
-        // 2. 发送消息
-        // 注意：这里基于 OpenCode SDK 的常见模式。
-        // 如果 SDK 版本不同，可能需要调整为 client.messages.create({ session_id: ... })
-        console.log("Sending message to OpenCode...");
-        
-        // 发送用户消息
-        // 通常 agent 收到消息后会执行操作，我们需要轮询或等待它的最终回复
-        // 这里假设是一个同步或伪同步接口，或者返回的是一个 Job
-        // 根据之前的搜索，Opencode 主要是基于 session 的
-        
-        // 尝试发送
+        // 发送消息
         await client.session.messages.create(currentSessionId, {
             role: 'user',
             content: userMessage
         });
 
-        // 3. 获取回复
-        // 因为 OpenCode 可能会执行多个步骤（Thinking/Tool calls），我们需要获取最新的 Assistant 消息
-        // 这里做一个简单的轮询或者直接获取历史记录的最后一条
-        // 实际生产环境建议使用 SSE 流式接口 (client.session.events.stream)
-        
-        // 简单策略：等待 2 秒让它思考（演示用），然后获取最后一条消息
-        // 真正的集成应该使用 WebSocket 或 SSE
+        // 等待回复
         await new Promise(r => setTimeout(r, 2000));
         
         const messages = await client.session.messages.list(currentSessionId, {
@@ -87,38 +124,81 @@ app.post('/api/chat', async (req, res) => {
             order: 'desc'
         });
         
-        // 找到最近的一条 assistant 消息
         const lastMsg = messages.data.find(m => m.role === 'assistant');
-        const replyText = lastMsg ? lastMsg.content : "(OpenCode 正在思考或执行任务，请稍后查询...)";
+        const replyText = lastMsg ? lastMsg.content : "(OpenCode is thinking...)";
 
         res.json({ response: replyText });
 
     } catch (error) {
-        console.error("OpenCode API Error:", error);
+        console.error("[Error] OpenCode API:", error);
         
-        // 错误恢复：如果是 Session 过期，重置 ID
         if (error.status === 404) {
             currentSessionId = null;
         }
 
-        res.json({ 
-            response: `[System Error] 无法连接 OpenCode Agent。\n请检查：\n1. OpenCode 是否在电脑上运行？\n2. 端口是否正确？\n错误信息: ${error.message}` 
+        res.status(500).json({ 
+            error: 'OpenCode Error',
+            message: `Failed to connect to OpenCode Agent. Error: ${error.message}` 
         });
     }
 });
 
-// Mock 逻辑
+// 执行命令接口（需要认证）
+app.post('/api/execute', authenticateApiKey, async (req, res) => {
+    const { command } = req.body;
+    console.log(`[Execute] Command: ${command}`);
+    
+    // 安全：只允许白名单命令
+    const allowedCommands = ['ls', 'pwd', 'echo', 'cat', 'ps', 'top', 'df', 'free', 'whoami', 'date', 'uname'];
+    const cmdBase = command.split(' ')[0];
+    
+    if (!allowedCommands.includes(cmdBase)) {
+        return res.status(403).json({
+            error: 'Command not allowed',
+            message: `Command '${cmdBase}' is not in the whitelist.`
+        });
+    }
+    
+    // Mock 执行
+    res.json({
+        success: true,
+        output: `[Mock] Command executed: ${command}\nOutput: (This would execute on the server in production)`
+    });
+});
+
+// Mock 响应逻辑
 function mockAIResponse(msg) {
-    if (msg.includes("你好")) return "你好！我是你的 PC 助手。";
-    if (msg.includes("文件")) return "检测到当前目录下有 5 个文件：\n- server.js\n- package.json\n...";
-    if (msg.includes("进程")) return "正在扫描系统进程...\nCPU 使用率: 15%\n内存使用: 45%";
-    return `[Mock Mode] 我收到了你的指令：“${msg}”。\n(要使用真实 AI，请在 .env 中关闭 MOCK_MODE 并启动 OpenCode)`;
+    const responses = {
+        '你好': '你好！我是 OpenBridge，你的远程PC助手。',
+        'hello': 'Hello! I am OpenBridge, your remote PC assistant.',
+        'help': '可用命令：\n- 文件操作\n- 系统信息\n- 执行命令',
+        'ip': () => `Server IP: ${require('os').hostname()}`,
+        'time': () => `Current time: ${new Date().toLocaleString()}`,
+    };
+    
+    for (const [key, response] of Object.entries(responses)) {
+        if (msg.toLowerCase().includes(key)) {
+            return typeof response === 'function' ? response() : response;
+        }
+    }
+    
+    return `[Mock Mode] Received: "${msg}"\n\n(To use real AI, configure OpenCode in .env file)`;
 }
 
+// SPA路由
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// 启动服务器
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running at http://0.0.0.0:${PORT}`);
+    console.log(`\n🚀 OpenBridge Server Started!`);
+    console.log(`📡 Listening on: http://0.0.0.0:${PORT}`);
+    console.log(`🔑 API Key: ${API_KEY.substring(0, 8)}...`);
+    console.log(`🌐 CORS Origins: ${ALLOWED_ORIGINS.join(', ')}`);
+    console.log(`\n📖 Usage:`);
+    console.log(`   Health:  GET  http://YOUR_IP:${PORT}/api/health`);
+    console.log(`   Chat:    POST http://YOUR_IP:${PORT}/api/chat`);
+    console.log(`   Headers: X-API-Key: ${API_KEY}`);
+    console.log(`\n⚠️  Security: Change default API_KEY in .env file!\n`);
 });

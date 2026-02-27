@@ -741,9 +741,15 @@
                 <div class="input-group">
                     <label class="input-label" data-i18n="serverUrl">服务器地址</label>
                     <input type="text" class="input-field" id="serverUrl" placeholder="http://192.168.1.5:8000">
-                    <div class="input-hint" data-i18n="serverHint">输入PC服务器的IP地址</div>
+                    <div class="input-hint" data-i18n="serverHint">输入PC服务器的IP或域名</div>
                 </div>
-                
+
+                <div class="input-group">
+                    <label class="input-label" data-i18n="apiKey">API密钥</label>
+                    <input type="password" class="input-field" id="apiKey" placeholder="your-api-key">
+                    <div class="input-hint" data-i18n="apiKeyHint">用于安全认证（在服务器.env中设置）</div>
+                </div>
+
                 <div class="input-group">
                     <label class="input-label" data-i18n="language">语言</label>
                     <div class="language-selector">
@@ -864,7 +870,9 @@
                 recentActivity: '最近活动',
                 appReady: '应用已就绪',
                 serverUrl: '服务器地址',
-                serverHint: '输入PC服务器的IP地址',
+                serverHint: '输入PC服务器的IP或域名',
+                apiKey: 'API密钥',
+                apiKeyHint: '用于安全认证（在服务器.env中设置）',
                 language: '语言',
                 testConnection: '测试连接',
                 saveConfig: '保存配置',
@@ -901,7 +909,9 @@
                 recentActivity: 'Recent Activity',
                 appReady: 'App is ready',
                 serverUrl: 'Server URL',
-                serverHint: 'Enter PC server IP address',
+                serverHint: 'Enter PC server IP or domain',
+                apiKey: 'API Key',
+                apiKeyHint: 'For security (set in server .env)',
                 language: 'Language',
                 testConnection: 'Test Connection',
                 saveConfig: 'Save Config',
@@ -931,6 +941,18 @@ What would you like to do?`,
         let config = JSON.parse(localStorage.getItem('serverConfig')) || {};
         let isConnected = false;
         let deferredPrompt = null;
+
+        // 获取请求头
+        function getHeaders() {
+            const headers = {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            };
+            if (config.apiKey) {
+                headers['X-API-Key'] = config.apiKey;
+            }
+            return headers;
+        }
         
         // 初始化
         document.addEventListener('DOMContentLoaded', function() {
@@ -1012,32 +1034,35 @@ What would you like to do?`,
         // 加载配置
         function loadConfig() {
             document.getElementById('serverUrl').value = config.serverUrl || '';
-            
+            document.getElementById('apiKey').value = config.apiKey || '';
+
             // 设置语言按钮
             document.querySelectorAll('.lang-btn').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.lang === currentLang);
             });
-            
+
             updateServerDisplay();
         }
         
         // 保存配置
         function saveConfig() {
             const serverUrl = document.getElementById('serverUrl').value.trim();
-            
+            const apiKey = document.getElementById('apiKey').value.trim();
+
             if (!serverUrl) {
                 showToast(i18n[currentLang].enterServerUrl, 'error');
                 return;
             }
-            
+
             config = {
                 serverUrl: serverUrl,
+                apiKey: apiKey,
                 language: currentLang
             };
-            
+
             localStorage.setItem('serverConfig', JSON.stringify(config));
             localStorage.setItem('language', currentLang);
-            
+
             updateServerDisplay();
             addLog('配置已保存', 'success');
             showToast(i18n[currentLang].configSaved, 'success');
@@ -1062,7 +1087,7 @@ What would you like to do?`,
                 const startTime = Date.now();
                 const response = await fetch(serverUrl + '/api/health', {
                     method: 'GET',
-                    headers: { 'Accept': 'application/json' }
+                    headers: getHeaders()
                 });
                 
                 const duration = Date.now() - startTime;
@@ -1090,17 +1115,17 @@ What would you like to do?`,
         // 检查连接
         async function checkConnection() {
             if (!config.serverUrl) return;
-            
+
             try {
                 const response = await fetch(config.serverUrl + '/api/health', {
                     method: 'GET',
-                    headers: { 'Accept': 'application/json' }
+                    headers: getHeaders()
                 });
                 isConnected = response.ok;
             } catch (e) {
                 isConnected = false;
             }
-            
+
             updateStatusDisplay();
         }
         
@@ -1150,10 +1175,7 @@ What would you like to do?`,
             try {
                 const response = await fetch(config.serverUrl + '/api/chat', {
                     method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    },
+                    headers: getHeaders(),
                     body: JSON.stringify({ message: message })
                 });
                 
