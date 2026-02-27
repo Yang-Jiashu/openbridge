@@ -43,7 +43,7 @@ jobs:
       working-directory: ./flutter_app
     
     - name: Upload APK
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: flutter-apk
         path: flutter_app/build/app/outputs/flutter-apk/app-release.apk
@@ -78,7 +78,7 @@ jobs:
         zip -r app-release.ipa Payload
     
     - name: Upload IPA
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ios-ipa
         path: flutter_app/build/ios/iphoneos/app-release.ipa
@@ -90,13 +90,13 @@ jobs:
     
     steps:
     - name: Download Android APK
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: flutter-apk
         path: ./artifacts/android
     
     - name: Download iOS IPA
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: ios-ipa
         path: ./artifacts/ios
