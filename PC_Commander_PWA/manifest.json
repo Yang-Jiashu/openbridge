@@ -1,6 +1,6 @@
 {
-  "name": "PC Commander",
-  "short_name": "PCCmd",
+  "name": "OpenBridge",
+  "short_name": "OpenBridge",
   "description": "手机远程控制PC - OpenCode/OpenClaw",
   "start_url": "/",
   "display": "standalone",

@@ -103,26 +103,26 @@ jobs:
     
     - name: Rename artifacts
       run: |
-        mv ./artifacts/android/app-release.apk ./artifacts/PC_Commander_${{ github.ref_name }}_Android.apk
-        mv ./artifacts/ios/app-release.ipa ./artifacts/PC_Commander_${{ github.ref_name }}_iOS.ipa
+        mv ./artifacts/android/app-release.apk ./artifacts/OpenBridge_${{ github.ref_name }}_Android.apk
+        mv ./artifacts/ios/app-release.ipa ./artifacts/OpenBridge_${{ github.ref_name }}_iOS.ipa
     
     - name: Create Release
       uses: softprops/action-gh-release@v1
       with:
         files: ./artifacts/*
-        name: PC Commander ${{ github.ref_name }}
+        name: OpenBridge ${{ github.ref_name }}
         body: |
-          ## PC Commander ${{ github.ref_name }} 🚀
+          ## OpenBridge ${{ github.ref_name }} 🚀
           
           ### 📱 下载安装包
           
           #### Android
-          - **APK**: `PC_Commander_${{ github.ref_name }}_Android.apk`
+          - **APK**: `OpenBridge_${{ github.ref_name }}_Android.apk`
           - 系统要求: Android 5.0+ (API 21+)
           - 安装方式: 下载后点击安装，允许"未知来源"
           
           #### iOS
-          - **IPA**: `PC_Commander_${{ github.ref_name }}_iOS.ipa`
+          - **IPA**: `OpenBridge_${{ github.ref_name }}_iOS.ipa`
           - 系统要求: iOS 11.0+
           - 安装方式: 需要签名或使用 TestFlight
           

@@ -86,11 +86,11 @@ jobs:
         files: ./artifacts/*.apk
         name: Release ${{ github.ref_name }}
         body: |
-          ## PC Commander ${{ github.ref_name }}
+          ## OpenBridge ${{ github.ref_name }}
           
           ### 下载
-          - 📱 **Debug 版本**（测试用）: `PC_Commander_${{ github.ref_name }}_debug.apk`
-          - 📦 **Release 版本**（正式用）: `PC_Commander_${{ github.ref_name }}_release.apk`
+          - 📱 **Debug 版本**（测试用）: `OpenBridge_${{ github.ref_name }}_debug.apk`
+          - 📦 **Release 版本**（正式用）: `OpenBridge_${{ github.ref_name }}_release.apk`
           
           ### 安装说明
           1. 下载 APK 文件

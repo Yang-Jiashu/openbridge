@@ -1,7 +1,7 @@
-# 🚀 PC Commander
+# 🚀 OpenBridge
 
-[![Build Android](https://github.com/yourusername/pc-commander/actions/workflows/build-android.yml/badge.svg)](https://github.com/yourusername/pc-commander/actions)
-[![Build Flutter](https://github.com/yourusername/pc-commander/actions/workflows/build-flutter.yml/badge.svg)](https://github.com/yourusername/pc-commander/actions)
+[![Build Android](https://github.com/Yang-Jiashu/openbridge/actions/workflows/build-android.yml/badge.svg)](https://github.com/Yang-Jiashu/openbridge/actions)
+[![Build Flutter](https://github.com/Yang-Jiashu/openbridge/actions/workflows/build-flutter.yml/badge.svg)](https://github.com/Yang-Jiashu/openbridge/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 🌍 **全球首款开源 AI 增强型跨平台远程控制解决方案**
@@ -14,7 +14,7 @@
 
 ### 最新版本
 
-📥 **[点击下载最新 APK](https://github.com/yourusername/pc-commander/releases/latest)**
+📥 **[点击下载最新 APK](https://github.com/Yang-Jiashu/openbridge/releases/latest)**
 
 或者扫描下方二维码：
 
@@ -75,8 +75,8 @@
 
 ```bash
 # 克隆仓库
-git clone https://github.com/yourusername/pc-commander.git
-cd pc-commander
+git clone https://github.com/Yang-Jiashu/openbridge.git
+cd openbridge
 
 # 安装依赖
 npm install
@@ -153,7 +153,7 @@ flutter build web
 ## 🏗️ 项目结构
 
 ```
-pc-commander/
+openbridge/
 ├── 📱 PC_Commander_APK/          # Android 原生项目
 │   ├── app/
 │   │   ├── src/main/
@@ -206,7 +206,7 @@ pc-commander/
 
 ### 报告问题
 
-- 使用 [GitHub Issues](https://github.com/yourusername/pc-commander/issues)
+- 使用 [GitHub Issues](https://github.com/Yang-Jiashu/openbridge/issues)
 - 描述问题时请提供：
   - 设备型号和系统版本
   - 复现步骤
@@ -260,11 +260,11 @@ copies or substantial portions of the Software.
 
 ## ⭐ Star 历史
 
-[![Star History Chart](https://api.star-history.com/svg?repos=yourusername/pc-commander&type=Date)](https://star-history.com/#yourusername/pc-commander&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=Yang-Jiashu/openbridge&type=Date)](https://star-history.com/#Yang-Jiashu/openbridge&Date)
 
 ---
 
-**Made with ❤️ by the PC Commander Team**
+**Made with ❤️ by the OpenBridge Team**
 
 ---
 
@@ -272,7 +272,7 @@ copies or substantial portions of the Software.
 
 ### Introduction
 
-PC Commander is the world's first open-source AI-enhanced cross-platform remote control solution.
+OpenBridge is the world's first open-source AI-enhanced cross-platform remote control solution.
 
 ### Features
 
@@ -285,7 +285,7 @@ PC Commander is the world's first open-source AI-enhanced cross-platform remote 
 
 ### Installation
 
-Download the latest APK from [Releases](https://github.com/yourusername/pc-commander/releases).
+Download the latest APK from [Releases](https://github.com/Yang-Jiashu/openbridge/releases).
 
 ### Quick Start
 
